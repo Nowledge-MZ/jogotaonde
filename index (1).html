@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0F3D20">
+  <link rel="manifest" href="/jogotaonde/manifest.json">
+  <title>Jogo Tá Onde — Maputo</title>
+  <meta name="description" content="Encontra bares em Maputo com transmissão ao vivo da Copa do Mundo 2026. Horários no fuso de Moçambique.">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F5F4F0; color: #1a1a1a; }
+
+    /* HERO */
+    .hero {
+      background: #0F3D20;
+      padding: 20px 16px 16px;
+      position: relative; overflow: hidden;
+    }
+    .hero-stripes {
+      position: absolute; inset: 0; display: flex;
+    }
+    .hero-stripes span {
+      flex: 1; background: rgba(30,122,64,0.35);
+    }
+    .hero-stripes span:nth-child(even) { background: rgba(26,107,53,0.35); }
+    .hero-content { position: relative; z-index: 1; }
+    .app-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(212,164,32,0.2);
+      border: 1px solid rgba(212,164,32,0.4);
+      color: #F5C842; font-size: 11px; font-weight: 600;
+      padding: 3px 10px; border-radius: 20px;
+      margin-bottom: 10px; letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .app-title { font-size: 26px; font-weight: 600; color: #fff; line-height: 1.15; margin-bottom: 4px; }
+    .app-title em { color: #F5C842; font-style: normal; }
+    .app-sub { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 14px; }
+
+    /* PLACAR */
+    .placar {
+      display: flex; align-items: center;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .pl-team { display: flex; flex-direction: column; align-items: center; padding: 10px 14px; gap: 2px; }
+    .pl-flag { font-size: 22px; }
+    .pl-name { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 500; }
+    .pl-center {
+      flex: 1; text-align: center;
+      border-left: 1px solid rgba(255,255,255,0.1);
+      border-right: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 10px;
+    }
+    .pl-score { font-size: 26px; font-weight: 600; color: #fff; letter-spacing: 4px; }
+    .pl-live { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: #ff7070; margin-top: 2px; }
+    .pl-dot { width: 5px; height: 5px; border-radius: 50%; background: #E24B4A; animation: blink 1.2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    /* COUNTDOWN */
+    .countdown {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+    }
+    .cd-unit {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 6px 10px;
+      text-align: center; min-width: 48px;
+    }
+    .cd-num { font-size: 20px; font-weight: 600; color: #F5C842; line-height: 1; }
+    .cd-label { font-size: 9px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+    .cd-sep { font-size: 18px; color: rgba(255,255,255,0.3); font-weight: 600; }
+    .cd-title { font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
+
+    /* TABS */
+    .tabs {
+      display: flex; background: #fff;
+      border-bottom: 1px solid #e8e6e0;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      flex-shrink: 0; padding: 11px 14px;
+      font-size: 13px; color: #888;
+      border: none; background: transparent;
+      border-bottom: 2px solid transparent;
+      cursor: pointer; white-space: nowrap;
+    }
+    .tab.active { color: #0F3D20; border-bottom-color: #D4A420; font-weight: 600; }
+
+    /* CONTENT */
+    .content { padding: 14px; max-width: 600px; margin: 0 auto; }
+
+    /* JOGO HOJE */
+    .jogo-hoje {
+      background: #0F3D20; border-radius: 10px;
+      padding: 10px 14px; display: flex; align-items: center;
+      gap: 10px; margin-bottom: 12px;
+    }
+    .jh-pill {
+      background: #D4A420; color: #0F3D20;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 8px; white-space: nowrap;
+    }
+    .jh-match { flex: 1; font-size: 14px; font-weight: 600; color: #fff; }
+    .jh-hora { font-size: 12px; color: rgba(255,255,255,0.55); white-space: nowrap; }
+
+    /* FILTROS */
+    .filtros { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .filtro {
+      background: #fff; border: 1px solid #ddd;
+      color: #666; padding: 5px 12px;
+      border-radius: 20px; font-size: 12px; cursor: pointer;
+    }
+    .filtro.ativo { background: #0F3D20; color: #D4A420; border-color: #0F3D20; }
+
+    /* BAR CARDS */
+    .bar-card {
+      background: #fff; border: 1px solid #e8e6e0;
+      border-radius: 12px; overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .bar-head {
+      background: #0F3D20; padding: 10px 12px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .bar-nome { font-size: 14px; font-weight: 600; color: #fff; }
+    .bar-bairro { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+    .bar-badge {
+      font-size: 10px; font-weight: 600; padding: 2px 7px;
+      border-radius: 6px; white-space: nowrap;
+    }
+    .badge-destaque { background: #D4A420; color: #0F3D20; }
+    .badge-lotado { background: #E24B4A; color: #fff; }
+    .badge-aberto { background: #EAF3DE; color: #27500A; }
+    .bar-body { padding: 10px 12px; }
+    .bar-info { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; margin-bottom: 4px; }
+    .bar-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+    .bar-tag { font-size: 10px; padding: 2px 7px; border-radius: 5px; background: #F5F4F0; color: #666; }
+    .bar-tag-gold { background: #FFF3CC; color: #633806; }
+
+    /* LOTADO OVERLAY */
+    .bar-head.lotado { background: #5F5E5A; position: relative; }
+    .lotado-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* CALENDÁRIO */
+    .cal-header {
+      background: #0F3D20; border-radius: 10px 10px 0 0;
+      padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .cal-header-title { font-size: 13px; font-weight: 600; color: #F5C842; }
+    .cal-header-sub { font-size: 11px; color: rgba(255,255,255,0.45); }
+    .cal-header-date { font-size: 12px; color: #F5C842; font-weight: 600; text-align: right; }
+    .cal-body { background: #fff; border: 1px solid #e8e6e0; border-top: none; border-radius: 0 0 10px 10px; margin-bottom: 12px; }
+    .cal-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-bottom: 1px solid #f0ede8;
+    }
+    .cal-row:last-child { border: none; }
+    .cal-row.madrugada { background: #FFF8F0; }
+    .cal-time { font-size: 13px; font-weight: 600; color: #1a1a1a; min-width: 44px; }
+    .cal-time.live { color: #E24B4A; }
+    .cal-time.madrugada-time { color: #E24B4A; font-size: 11px; }
+    .cal-flags { font-size: 16px; flex-shrink: 0; }
+    .cal-match { flex: 1; font-size: 13px; color: #1a1a1a; }
+    .cal-match span { font-size: 11px; color: #888; display: block; }
+    .cal-status-live { font-size: 10px; font-weight: 600; background: #E24B4A; color: #fff; padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
+    .cal-status-soon { font-size: 11px; color: #888; white-space: nowrap; }
+    .cal-status-mdrg { font-size: 10px; color: #E24B4A; font-weight: 600; white-space: nowrap; }
+    .cal-aviso { font-size: 11px; color: #888; padding: 8px 14px; background: #FFF8F0; border-top: 1px solid #f0ede8; border-radius: 0 0 10px 10px; }
+
+    /* TERMÔMETRO */
+    .thermo {
+      background: #0F3D20; border-radius: 12px;
+      padding: 14px; margin-bottom: 12px;
+    }
+    .thermo-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .thermo-title { font-size: 14px; font-weight: 600; color: #F5C842; }
+    .thermo-votos { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+    .thermo-live-pill { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #ff7070; }
+    .thermo-bar {
+      display: flex; border-radius: 22px; overflow: hidden;
+      height: 44px; margin-bottom: 6px;
+    }
+    .thermo-a {
+      display: flex; align-items: center; padding: 0 12px; gap: 6px;
+      background: #185FA5; transition: width 0.5s;
+    }
+    .thermo-b {
+      flex: 1; display: flex; align-items: center;
+      justify-content: flex-end; padding: 0 12px; gap: 6px;
+      background: #E24B4A;
+    }
+    .thermo-pct { font-size: 15px; font-weight: 600; color: #fff; }
+    .thermo-flag { font-size: 20px; }
+    .thermo-counts { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 12px; }
+    .vote-btns { display: flex; gap: 8px; }
+    .vote-btn {
+      flex: 1; padding: 10px;
+      border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.07); color: #fff;
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .vote-btn.ativo-a { background: rgba(24,95,165,0.5); border-color: #378ADD; }
+    .vote-btn.ativo-b { background: rgba(226,75,74,0.5); border-color: #E24B4A; }
+    .vote-confirm { text-align: center; font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 8px; }
+
+    /* BAIRROS */
+    .bairros-card { background: #fff; border: 1px solid #e8e6e0; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+    .bairros-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 10px; }
+    .bairro-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0ede8; }
+    .bairro-row:last-child { border: none; }
+    .bairro-nome { font-size: 12px; color: #1a1a1a; min-width: 110px; }
+    .bairro-bar-wrap { flex: 1; height: 8px; background: #f0ede8; border-radius: 4px; overflow: hidden; display: flex; }
+    .bairro-seg-a { height: 100%; background: #185FA5; }
+    .bairro-seg-b { height: 100%; background: #E24B4A; }
+    .bairro-pct { font-size: 11px; color: #888; min-width: 40px; text-align: right; }
+
+    /* PALPITES */
+    .palpite-card { background: #fff; border: 1px solid #e8e6e0; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+    .palp-match-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .palp-flags { font-size: 18px; }
+    .palp-nome { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+    .palp-hora { font-size: 11px; color: #888; }
+    .placar-input { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .palp-team { flex: 1; text-align: center; }
+    .palp-team-name { font-size: 11px; color: #888; margin-bottom: 5px; }
+    .palp-num { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .num-btn {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: #F5F4F0; border: 1px solid #ddd;
+      font-size: 18px; font-weight: 500; color: #1a1a1a;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .num-val { font-size: 26px; font-weight: 600; color: #1a1a1a; min-width: 30px; text-align: center; }
+    .palp-sep { font-size: 20px; color: #888; }
+    .palp-submit {
+      width: 100%; background: #0F3D20; color: #D4A420;
+      border: none; border-radius: 8px; padding: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .palp-msg { display: none; text-align: center; font-size: 12px; color: #27500A; margin-top: 8px; padding: 7px; background: #EAF3DE; border-radius: 8px; }
+
+    /* RESULTADOS PALPITES */
+    .palp-results { background: #fff; border: 1px solid #e8e6e0; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+    .palp-results-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 10px; }
+    .result-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0ede8; }
+    .result-row:last-child { border: none; }
+    .result-score { font-size: 13px; font-weight: 600; color: #1a1a1a; min-width: 36px; }
+    .result-bar-wrap { flex: 1; height: 7px; background: #f0ede8; border-radius: 4px; overflow: hidden; }
+    .result-bar { height: 100%; background: #1E7A40; border-radius: 4px; }
+    .result-pct { font-size: 11px; color: #888; min-width: 30px; text-align: right; }
+
+    /* RANKING */
+    .ranking-card { background: #fff; border: 1px solid #e8e6e0; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+    .ranking-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+    .ranking-sub { font-size: 11px; color: #888; margin-bottom: 10px; }
+    .rank-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f0ede8; }
+    .rank-row:last-child { border: none; }
+    .rank-pos { font-size: 14px; min-width: 24px; text-align: center; }
+    .rank-avatar { width: 30px; height: 30px; border-radius: 50%; background: #F5F4F0; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .rank-info { flex: 1; }
+    .rank-nome { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+    .rank-sub { font-size: 11px; color: #888; }
+    .rank-pts { font-size: 13px; font-weight: 600; color: #27500A; }
+
+    /* EM CASA */
+    .anunciante {
+      background: #FFF3CC; border: 1px solid #EF9F27;
+      border-radius: 10px; padding: 10px 12px;
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 8px; font-size: 13px; color: #412402;
+    }
+    .anunc-icon { font-size: 22px; flex-shrink: 0; }
+    .anunc-nome { font-size: 13px; font-weight: 600; }
+    .anunc-sub { font-size: 11px; color: #854F0B; }
+    .casa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .casa-card { background: #fff; border: 1px solid #e8e6e0; border-radius: 10px; padding: 10px; }
+    .casa-card-title { font-size: 13px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px; }
+    .casa-card-icon { font-size: 20px; margin-bottom: 6px; display: block; }
+    .casa-card ul { list-style: none; padding: 0; }
+    .casa-card ul li { font-size: 12px; color: #666; padding: 2px 0; }
+    .casa-card ul li::before { content: "→ "; color: #888; }
+
+    /* LANG TOGGLE */
+    .lang-row { display: flex; justify-content: flex-end; padding: 8px 14px 0; }
+    .lang-toggle { display: flex; background: #f0ede8; border-radius: 8px; padding: 2px; }
+    .lang-btn { padding: 4px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: none; background: transparent; color: #888; }
+    .lang-btn.active { background: #fff; color: #1a1a1a; font-weight: 600; border: 1px solid #ddd; }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 58px; background: #fff;
+      border-top: 1px solid #e8e6e0;
+      display: flex; align-items: center;
+      justify-content: space-around;
+      z-index: 100;
+    }
+    .bn-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; border: none; background: transparent; padding: 6px 10px; flex: 1; }
+    .bn-icon { font-size: 22px; color: #aaa; }
+    .bn-label { font-size: 9px; color: #aaa; }
+    .bn-item.active .bn-icon { font-size: 22px; color: #0F3D20; }
+    .bn-item.active .bn-label { color: #0F3D20; font-weight: 600; }
+    .bn-dot { width: 4px; height: 4px; border-radius: 50%; background: #E24B4A; margin: 0 auto; margin-top: -2px; }
+
+    .page { display: none; padding-bottom: 70px; }
+    .page.active { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-stripes">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <div class="hero-content">
+    <div class="lang-row" style="padding:0 0 10px 0; justify-content:flex-start">
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="btn-pt" onclick="setLang('pt')">🇲🇿 PT</button>
+        <button class="lang-btn" id="btn-en" onclick="setLang('en')">🇬🇧 EN</button>
+      </div>
+    </div>
+    <div class="app-badge">⚽ Copa do Mundo 2026</div>
+    <div class="app-title" id="hero-title">Jogo <em>Tá Onde</em><br>em Maputo?</div>
+    <div class="app-sub" id="hero-sub">Bares com telão · horários no fuso de Moçambique</div>
+
+    <!-- PLACAR AO VIVO -->
+    <div class="placar" id="placar-bloco">
+      <div class="pl-team">
+        <div class="pl-flag">🇧🇷</div>
+        <div class="pl-name">BRA</div>
+      </div>
+      <div class="pl-center">
+        <div class="pl-score" id="pl-score">1 – 0</div>
+        <div class="pl-live"><div class="pl-dot"></div><span id="pl-min">74'</span></div>
+      </div>
+      <div class="pl-team">
+        <div class="pl-flag">🇭🇷</div>
+        <div class="pl-name">CRO</div>
+      </div>
+    </div>
+
+    <!-- COUNTDOWN (oculto quando há jogo ao vivo) -->
+    <div id="countdown-bloco" style="display:none">
+      <div class="cd-title" id="cd-title">Próximo jogo em</div>
+      <div class="countdown">
+        <div class="cd-unit"><div class="cd-num" id="cd-h">02</div><div class="cd-label">h</div></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-unit"><div class="cd-num" id="cd-m">14</div><div class="cd-label">min</div></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-unit"><div class="cd-num" id="cd-s">37</div><div class="cd-label">seg</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="showPage('bares',this)" id="tab-bares" data-pt="🏪 Bares" data-en="🏪 Bars">🏪 Bares</button>
+  <button class="tab" onclick="showPage('calendario',this)" id="tab-calendario" data-pt="📅 Calendário" data-en="📅 Schedule">📅 Calendário</button>
+  <button class="tab" onclick="showPage('torcida',this)" id="tab-torcida" data-pt="🌡️ Torcida" data-en="🌡️ Fans">🌡️ Torcida</button>
+  <button class="tab" onclick="showPage('palpites',this)" id="tab-palpites" data-pt="🎯 Palpites" data-en="🎯 Predict">🎯 Palpites</button>
+  <button class="tab" onclick="showPage('casa',this)" id="tab-casa" data-pt="🛋️ Em Casa" data-en="🛋️ At Home">🛋️ Em Casa</button>
+</div>
+
+<!-- ===== BARES ===== -->
+<div id="page-bares" class="page active">
+  <div class="content">
+    <div class="jogo-hoje">
+      <div class="jh-pill" id="jh-pill">HOJE</div>
+      <div class="jh-match" id="jh-match">Brasil × Croácia</div>
+      <div class="jh-hora" id="jh-hora">⏰ 20h00</div>
+    </div>
+    <div class="filtros">
+      <button class="filtro ativo" onclick="filtrar(this,'todos')" data-pt="Todos" data-en="All">Todos</button>
+      <button class="filtro" onclick="filtrar(this,'sommershield')" data-pt="Sommershield" data-en="Sommershield">Sommershield</button>
+      <button class="filtro" onclick="filtrar(this,'polana')" data-pt="Polana" data-en="Polana">Polana</button>
+      <button class="filtro" onclick="filtrar(this,'baixa')" data-pt="Baixa" data-en="City Centre">Baixa</button>
+      <button class="filtro" onclick="filtrar(this,'telao')" data-pt="Só telão" data-en="Big screen only">Só telão</button>
+    </div>
+
+    <div class="bar-card" data-bairro="sommershield" data-telao="true">
+      <div class="bar-head">
+        <div><div class="bar-nome">Café Continental</div><div class="bar-bairro">Sommershield · Av. Julius Nyerere</div></div>
+        <span class="bar-badge badge-destaque">⭐ Destaque</span>
+      </div>
+      <div class="bar-body">
+        <div class="bar-info">📺 3 telões · DSTV Sport</div>
+        <div class="bar-info">👥 Cap. ~80 pessoas · espaço disponível</div>
+        <div class="bar-info">🕐 Abre 11h · Fecha meia-noite</div>
+        <div class="bar-tags">
+          <span class="bar-tag bar-tag-gold">Telão gigante</span>
+          <span class="bar-tag">Wi-Fi</span>
+          <span class="bar-tag">Happy hour</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bar-card" data-bairro="baixa" data-telao="true">
+      <div class="bar-head lotado" style="position:relative">
+        <div><div class="bar-nome">Piri Piri Sports Bar</div><div class="bar-bairro">Baixa · Av. 25 de Setembro</div></div>
+        <span class="bar-badge badge-lotado">🔴 Lotado</span>
+      </div>
+      <div class="bar-body">
+        <div class="bar-info">📺 5 ecrãs · vários canais</div>
+        <div class="bar-info">⏱️ Reportado há 8 min · 14 confirmações</div>
+        <div class="bar-tags">
+          <span class="bar-tag bar-tag-gold">Maior sports bar</span>
+          <span class="bar-tag">Estacionamento</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bar-card" data-bairro="polana" data-telao="false">
+      <div class="bar-head">
+        <div><div class="bar-nome">Taverna da Polana</div><div class="bar-bairro">Polana · Av. Karl Marx</div></div>
+        <span class="bar-badge badge-aberto">✓ Aberto</span>
+      </div>
+      <div class="bar-body">
+        <div class="bar-info">📺 2 ecrãs · SuperSport</div>
+        <div class="bar-info">👥 Cap. ~60 pessoas</div>
+        <div class="bar-tags"><span class="bar-tag">Petiscos</span><span class="bar-tag">Promo durante jogos</span></div>
+      </div>
+    </div>
+
+    <div class="bar-card" data-bairro="sommershield" data-telao="true">
+      <div class="bar-head">
+        <div><div class="bar-nome">Cervejaria Maputo</div><div class="bar-bairro">Sommershield · Av. Mao Tsé Tung</div></div>
+        <span class="bar-badge badge-aberto">✓ Aberto</span>
+      </div>
+      <div class="bar-body">
+        <div class="bar-info">📺 Telão ext. + 2 ecrãs</div>
+        <div class="bar-info">👥 Cap. ~200 pessoas</div>
+        <div class="bar-tags"><span class="bar-tag bar-tag-gold">Esplanada</span><span class="bar-tag">Prego no pão</span></div>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:10px 0 4px">
+      <div style="font-size:12px;color:#888">O teu bar não está aqui?</div>
+      <button onclick="showPage('cadastro',null)" style="background:transparent;border:1px solid #ddd;color:#0F3D20;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:6px">Cadastrar bar ↗</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CALENDÁRIO ===== -->
+<div id="page-calendario" class="page">
+  <div class="content">
+    <div class="cal-header">
+      <div><div class="cal-header-title" id="cal-title">Hoje em Maputo</div><div class="cal-header-sub">Horários UTC+2 · Moçambique</div></div>
+      <div class="cal-header-date" id="cal-date">Sáb 28 Jun</div>
+    </div>
+    <div class="cal-body">
+      <div class="cal-row">
+        <div class="cal-time live">20h14</div>
+        <div class="cal-flags">🇧🇷🇭🇷</div>
+        <div class="cal-match">Brasil × Croácia<span>Oitavos · MetLife Stadium</span></div>
+        <div class="cal-status-live">AO VIVO</div>
+      </div>
+      <div class="cal-row">
+        <div class="cal-time">23h00</div>
+        <div class="cal-flags">🇫🇷🇵🇹</div>
+        <div class="cal-match">França × Portugal<span>Oitavos · Rose Bowl</span></div>
+        <div class="cal-status-soon" id="soon-txt">em 2h 46m</div>
+      </div>
+      <div class="cal-row madrugada">
+        <div class="cal-time madrugada-time">02h00 ⚠️</div>
+        <div class="cal-flags">🇩🇪🇯🇵</div>
+        <div class="cal-match">Alemanha × Japão<span>Oitavos · SoFi Stadium</span></div>
+        <div class="cal-status-mdrg">madrugada</div>
+      </div>
+      <div class="cal-aviso">⚠️ Jogos das 02h00 passam para o dia seguinte em Maputo — grava ou acorda cedo!</div>
+    </div>
+
+    <div style="font-size:12px;font-weight:600;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em">Amanhã</div>
+    <div class="cal-body" style="border-radius:10px">
+      <div class="cal-row">
+        <div class="cal-time">17h00</div>
+        <div class="cal-flags">🇦🇷🇲🇽</div>
+        <div class="cal-match">Argentina × México<span>Oitavos · AT&amp;T Stadium</span></div>
+        <div class="cal-status-soon">amanhã</div>
+      </div>
+      <div class="cal-row">
+        <div class="cal-time">20h00</div>
+        <div class="cal-flags">🇪🇸🇺🇾</div>
+        <div class="cal-match">Espanha × Uruguai<span>Oitavos · Levi's Stadium</span></div>
+        <div class="cal-status-soon">amanhã</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TORCIDA ===== -->
+<div id="page-torcida" class="page">
+  <div class="content">
+    <div class="thermo">
+      <div class="thermo-header">
+        <div><div class="thermo-title" id="thermo-title">🌡️ Termômetro Maputo</div><div class="thermo-votos" id="thermo-votos">1.247 votos hoje</div></div>
+        <div class="thermo-live-pill"><div class="pl-dot"></div> ao vivo</div>
+      </div>
+      <div class="thermo-bar">
+        <div class="thermo-a" id="thermo-a" style="width:68%">
+          <span class="thermo-pct" id="thermo-pct-a">68%</span>
+          <span class="thermo-flag">🇧🇷</span>
+        </div>
+        <div class="thermo-b" id="thermo-b">
+          <span class="thermo-flag">🇭🇷</span>
+          <span class="thermo-pct" id="thermo-pct-b">32%</span>
+        </div>
+      </div>
+      <div class="thermo-counts">
+        <span id="thermo-count-a">848 com o Brasil</span>
+        <span id="thermo-count-b">399 com a Croácia</span>
+      </div>
+      <div class="vote-btns">
+        <button class="vote-btn ativo-a" id="vbtn-a" onclick="votar('a')">🇧🇷 <span id="vbtn-a-txt">Estou com o Brasil</span></button>
+        <button class="vote-btn" id="vbtn-b" onclick="votar('b')">🇭🇷 <span id="vbtn-b-txt">Vou na Croácia</span></button>
+      </div>
+      <div class="vote-confirm" id="vote-confirm">✓ O teu voto está registado</div>
+    </div>
+
+    <div class="bairros-card">
+      <div class="bairros-title" id="bairros-title">Torcida por bairro</div>
+      <div class="bairro-row"><div class="bairro-nome">Sommershield</div><div class="bairro-bar-wrap"><div class="bairro-seg-a" style="width:72%"></div><div class="bairro-seg-b" style="width:28%"></div></div><div class="bairro-pct">🇧🇷 72%</div></div>
+      <div class="bairro-row"><div class="bairro-nome">Baixa</div><div class="bairro-bar-wrap"><div class="bairro-seg-a" style="width:61%"></div><div class="bairro-seg-b" style="width:39%"></div></div><div class="bairro-pct">🇧🇷 61%</div></div>
+      <div class="bairro-row"><div class="bairro-nome">Polana</div><div class="bairro-bar-wrap"><div class="bairro-seg-a" style="width:55%"></div><div class="bairro-seg-b" style="width:45%"></div></div><div class="bairro-pct">🇧🇷 55%</div></div>
+      <div class="bairro-row"><div class="bairro-nome">Matola</div><div class="bairro-bar-wrap"><div class="bairro-seg-a" style="width:78%"></div><div class="bairro-seg-b" style="width:22%"></div></div><div class="bairro-pct">🇧🇷 78%</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PALPITES ===== -->
+<div id="page-palpites" class="page">
+  <div class="content">
+    <div class="palpite-card">
+      <div class="palp-match-row">
+        <div class="palp-flags">🇧🇷🇭🇷</div>
+        <div><div class="palp-nome" id="palp-nome">Brasil × Croácia</div><div class="palp-hora" id="palp-hora">Oitavos · hoje 20h00 Maputo</div></div>
+      </div>
+      <div class="placar-input">
+        <div class="palp-team">
+          <div class="palp-team-name">🇧🇷 Brasil</div>
+          <div class="palp-num">
+            <button class="num-btn" onclick="changeGol('a',-1)">−</button>
+            <div class="num-val" id="gol-a">2</div>
+            <button class="num-btn" onclick="changeGol('a',1)">+</button>
+          </div>
+        </div>
+        <div class="palp-sep">×</div>
+        <div class="palp-team">
+          <div class="palp-team-name">🇭🇷 Croácia</div>
+          <div class="palp-num">
+            <button class="num-btn" onclick="changeGol('b',-1)">−</button>
+            <div class="num-val" id="gol-b">0</div>
+            <button class="num-btn" onclick="changeGol('b',1)">+</button>
+          </div>
+        </div>
+      </div>
+      <button class="palp-submit" onclick="submitPalpite()" id="palp-submit-btn">🎯 Registar palpite</button>
+      <div class="palp-msg" id="palp-msg"></div>
+    </div>
+
+    <div class="palp-results">
+      <div class="palp-results-title" id="palp-results-title">Palpites de Maputo — Brasil × Croácia</div>
+      <div class="result-row"><div class="result-score">2–0</div><div class="result-bar-wrap"><div class="result-bar" style="width:42%"></div></div><div class="result-pct">42%</div></div>
+      <div class="result-row"><div class="result-score">1–0</div><div class="result-bar-wrap"><div class="result-bar" style="width:24%"></div></div><div class="result-pct">24%</div></div>
+      <div class="result-row"><div class="result-score">2–1</div><div class="result-bar-wrap"><div class="result-bar" style="width:18%"></div></div><div class="result-pct">18%</div></div>
+      <div class="result-row"><div class="result-score">outros</div><div class="result-bar-wrap"><div class="result-bar" style="width:16%"></div></div><div class="result-pct">16%</div></div>
+      <div style="font-size:11px;color:#888;margin-top:8px" id="palp-total">532 palpites · resultado revelado após o apito final</div>
+    </div>
+
+    <div class="ranking-card">
+      <div class="ranking-title" id="ranking-title">🏆 Ranking dos palpiteiros</div>
+      <div class="ranking-sub" id="ranking-sub">Placar exacto = 10pts · Vencedor certo = 5pts · Empate certo = 3pts</div>
+      <div class="rank-row"><div class="rank-pos">🥇</div><div class="rank-avatar">🇧🇷</div><div class="rank-info"><div class="rank-nome">Fátima M.</div><div class="rank-sub">Café Continental · 8 certos</div></div><div class="rank-pts">95 pts</div></div>
+      <div class="rank-row"><div class="rank-pos">🥈</div><div class="rank-avatar">⚽</div><div class="rank-info"><div class="rank-nome">João B.</div><div class="rank-sub">Piri Piri · 6 certos</div></div><div class="rank-pts">70 pts</div></div>
+      <div class="rank-row"><div class="rank-pos">🥉</div><div class="rank-avatar">🇲🇿</div><div class="rank-info"><div class="rank-nome">Ana C.</div><div class="rank-sub">Taverna da Polana · 5 certos</div></div><div class="rank-pts">55 pts</div></div>
+      <div class="rank-row"><div class="rank-pos" style="font-size:12px;color:#aaa">Tu</div><div class="rank-avatar">😎</div><div class="rank-info"><div class="rank-nome" id="rank-tu-nome">O teu lugar</div><div class="rank-sub" id="rank-tu-sub">Faz um palpite para entrar</div></div><div class="rank-pts" style="color:#aaa">—</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EM CASA ===== -->
+<div id="page-casa" class="page">
+  <div class="content">
+    <div class="anunciante">
+      <div class="anunc-icon">🍗</div>
+      <div><div class="anunc-nome">Frango da Graça — delivery para o jogo</div><div class="anunc-sub">Entrega em 30min · válido até ao apito final</div></div>
+    </div>
+    <div class="anunciante">
+      <div class="anunc-icon">🍺</div>
+      <div><div class="anunc-nome">2M Cerveja · promoção Copa</div><div class="anunc-sub">Pack 12 latas com entrega grátis acima de 500MT</div></div>
+    </div>
+    <div class="casa-grid">
+      <div class="casa-card">
+        <span class="casa-card-icon">🍤</span>
+        <div class="casa-card-title" id="casa-quitutes">Quitutes</div>
+        <ul><li>Camarão na brasa</li><li>Prego no pão</li><li>Amendoim frito</li><li>Matapa</li></ul>
+      </div>
+      <div class="casa-card">
+        <span class="casa-card-icon">✅</span>
+        <div class="casa-card-title" id="casa-checklist">Checklist</div>
+        <ul><li>Cerveja gelada</li><li>DSTV Sport activo</li><li>Extensão ligada</li><li>Grupo avisado</li></ul>
+      </div>
+      <div class="casa-card">
+        <span class="casa-card-icon">📺</span>
+        <div class="casa-card-title" id="casa-onde">Onde ver</div>
+        <ul><li>DSTV Sport 1 e 2</li><li>TVM (selec.)</li><li>STV (direitos)</li></ul>
+      </div>
+      <div class="casa-card">
+        <span class="casa-card-icon">📱</span>
+        <div class="casa-card-title" id="casa-partilha">Partilha</div>
+        <ul><li>Manda o app</li><li>ao teu grupo</li><li>de WhatsApp!</li></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CADASTRO (hidden, accessed via button) -->
+<div id="page-cadastro" class="page">
+  <div class="content">
+    <div style="background:#fff;border:1px solid #e8e6e0;border-radius:12px;padding:14px">
+      <div style="font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:4px">Cadastra o teu bar</div>
+      <div style="font-size:13px;color:#888;margin-bottom:14px">Aparece no guia gratuitamente. Planos destaque a partir de 1.500MT/mês.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div><div style="font-size:11px;color:#888;margin-bottom:3px">Nome do bar *</div><input type="text" placeholder="Ex: Bar Sporting" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px"></div>
+        <div><div style="font-size:11px;color:#888;margin-bottom:3px">Bairro *</div><select style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px"><option>Sommershield</option><option>Polana</option><option>Baixa</option><option>Malhangalene</option><option>Matola</option><option>Outro</option></select></div>
+        <div><div style="font-size:11px;color:#888;margin-bottom:3px">WhatsApp *</div><input type="text" placeholder="+258 8X XXX XXXX" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px"></div>
+        <div><div style="font-size:11px;color:#888;margin-bottom:3px">Capacidade</div><select style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px"><option>Até 30</option><option>30–60</option><option>60–100</option><option>100+</option></select></div>
+      </div>
+      <div style="font-size:11px;color:#888;margin-bottom:6px">Equipamento</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;background:#F5F4F0;border:1px solid #ddd;padding:4px 10px;border-radius:16px"><input type="checkbox"> Telão gigante</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;background:#F5F4F0;border:1px solid #ddd;padding:4px 10px;border-radius:16px"><input type="checkbox" checked> TV grande</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;background:#F5F4F0;border:1px solid #ddd;padding:4px 10px;border-radius:16px"><input type="checkbox"> DSTV Sport</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;background:#F5F4F0;border:1px solid #ddd;padding:4px 10px;border-radius:16px"><input type="checkbox"> Esplanada</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;background:#F5F4F0;border:1px solid #ddd;padding:4px 10px;border-radius:16px"><input type="checkbox"> Wi-Fi</label>
+      </div>
+      <button style="width:100%;background:#0F3D20;color:#D4A420;border:none;padding:10px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer" onclick="alert('Candidatura enviada! Entraremos em contacto em breve.')">Enviar candidatura ↗</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="bn-item active" onclick="showPage('bares',null)" id="bn-bares">
+    <div class="bn-icon">🏪</div><div class="bn-label" id="bn-bares-label">Bares</div>
+  </button>
+  <button class="bn-item" onclick="showPage('calendario',null)" id="bn-calendario">
+    <div class="bn-icon">📅</div><div class="bn-label" id="bn-cal-label">Calendário</div>
+    <div class="bn-dot"></div>
+  </button>
+  <button class="bn-item" onclick="showPage('torcida',null)" id="bn-torcida">
+    <div class="bn-icon">🌡️</div><div class="bn-label" id="bn-torcida-label">Torcida</div>
+  </button>
+  <button class="bn-item" onclick="showPage('palpites',null)" id="bn-palpites">
+    <div class="bn-icon">🎯</div><div class="bn-label" id="bn-palpites-label">Palpites</div>
+  </button>
+  <button class="bn-item" onclick="showPage('casa',null)" id="bn-casa">
+    <div class="bn-icon">🛋️</div><div class="bn-label" id="bn-casa-label">Em Casa</div>
+  </button>
+</div>
+
+<script>
+// ── NAVEGAÇÃO ──
+var pages = ['bares','calendario','torcida','palpites','casa','cadastro'];
+function showPage(id, tabEl) {
+  pages.forEach(function(p) {
+    document.getElementById('page-'+p).classList.remove('active');
+    var bn = document.getElementById('bn-'+p);
+    if(bn) bn.classList.remove('active');
+    var tab = document.getElementById('tab-'+p);
+    if(tab) tab.classList.remove('active');
+  });
+  document.getElementById('page-'+id).classList.add('active');
+  var bn = document.getElementById('bn-'+id);
+  if(bn) bn.classList.add('active');
+  if(tabEl) tabEl.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ── FILTROS BARES ──
+function filtrar(btn, val) {
+  document.querySelectorAll('.filtro').forEach(function(b){ b.classList.remove('ativo'); });
+  btn.classList.add('ativo');
+  document.querySelectorAll('.bar-card').forEach(function(c) {
+    if(val==='todos') { c.style.display=''; return; }
+    if(val==='telao') { c.style.display = c.dataset.telao==='true' ? '' : 'none'; return; }
+    c.style.display = c.dataset.bairro===val ? '' : 'none';
+  });
+}
+
+// ── TERMÔMETRO ──
+var votos = {a:848, b:399};
+var meuVoto = 'a';
+function votar(lado) {
+  if(meuVoto) votos[meuVoto]--;
+  votos[lado]++;
+  meuVoto = lado;
+  var total = votos.a + votos.b;
+  var pA = Math.round(votos.a/total*100);
+  var pB = 100-pA;
+  document.getElementById('thermo-a').style.width = pA+'%';
+  document.getElementById('thermo-pct-a').textContent = pA+'%';
+  document.getElementById('thermo-pct-b').textContent = pB+'%';
+  document.getElementById('thermo-count-a').textContent = votos.a+' com o Brasil';
+  document.getElementById('thermo-count-b').textContent = votos.b+' com a Croácia';
+  document.getElementById('thermo-votos').textContent = (votos.a+votos.b)+' votos hoje';
+  document.getElementById('vbtn-a').className = 'vote-btn'+(lado==='a'?' ativo-a':'');
+  document.getElementById('vbtn-b').className = 'vote-btn'+(lado==='b'?' ativo-b':'');
+  document.getElementById('vote-confirm').textContent = '✓ Voto registado — obrigada!';
+}
+
+// ── PALPITES ──
+var gols = {a:2, b:0};
+function changeGol(team, delta) {
+  gols[team] = Math.max(0, Math.min(9, gols[team]+delta));
+  document.getElementById('gol-'+team).textContent = gols[team];
+}
+function submitPalpite() {
+  var msg = document.getElementById('palp-msg');
+  msg.style.display='block';
+  msg.textContent = '✓ Palpite '+gols.a+'–'+gols.b+' registado! Resultado revelado após o apito final.';
+  document.getElementById('palp-submit-btn').disabled = true;
+  document.getElementById('palp-submit-btn').style.opacity = '0.5';
+  document.getElementById('rank-tu-sub').textContent = 'Palpite: Brasil '+gols.a+' × '+gols.b+' Croácia';
+}
+
+// ── LÍNGUA ──
+var textos = {
+  pt: {
+    'hero-title': 'Jogo <em style="color:#F5C842;font-style:normal">Tá Onde</em><br>em Maputo?',
+    'hero-sub': 'Bares com telão · horários no fuso de Moçambique',
+    'jh-pill': 'HOJE', 'jh-match': 'Brasil × Croácia', 'jh-hora': '⏰ 20h00',
+    'thermo-title': '🌡️ Termômetro Maputo',
+    'bairros-title': 'Torcida por bairro',
+    'vbtn-a-txt': 'Estou com o Brasil', 'vbtn-b-txt': 'Vou na Croácia',
+    'cal-title': 'Hoje em Maputo', 'cal-date': 'Sáb 28 Jun',
+    'palp-nome': 'Brasil × Croácia', 'palp-hora': 'Oitavos · hoje 20h00 Maputo',
+    'palp-results-title': 'Palpites de Maputo',
+    'ranking-title': '🏆 Ranking dos palpiteiros',
+    'ranking-sub': 'Placar exacto = 10pts · Vencedor certo = 5pts',
+    'casa-quitutes': 'Quitutes', 'casa-checklist': 'Checklist', 'casa-onde': 'Onde ver', 'casa-partilha': 'Partilha',
+    'bn-bares-label':'Bares','bn-cal-label':'Calendário','bn-torcida-label':'Torcida','bn-palpites-label':'Palpites','bn-casa-label':'Em Casa'
+  },
+  en: {
+    'hero-title': 'Where to <em style="color:#F5C842;font-style:normal">Watch</em><br>in Maputo?',
+    'hero-sub': 'Bars with big screens · kick-off times in Mozambique (UTC+2)',
+    'jh-pill': 'TODAY', 'jh-match': 'Brazil × Croatia', 'jh-hora': '⏰ 20h00',
+    'thermo-title': '🌡️ Maputo Fan Meter',
+    'bairros-title': 'Support by neighbourhood',
+    'vbtn-a-txt': 'Go Brazil!', 'vbtn-b-txt': 'Go Croatia!',
+    'cal-title': 'Today in Maputo', 'cal-date': 'Sat 28 Jun',
+    'palp-nome': 'Brazil × Croatia', 'palp-hora': 'Round of 16 · today 20h00 Maputo',
+    'palp-results-title': 'Maputo predictions',
+    'ranking-title': '🏆 Top predictors',
+    'ranking-sub': 'Exact score = 10pts · Correct winner = 5pts',
+    'casa-quitutes': 'Snacks', 'casa-checklist': 'Checklist', 'casa-onde': 'Where to watch', 'casa-partilha': 'Share',
+    'bn-bares-label':'Bars','bn-cal-label':'Schedule','bn-torcida-label':'Fans','bn-palpites-label':'Predict','bn-casa-label':'At Home'
+  }
+};
+var lang = 'pt';
+function setLang(l) {
+  lang = l;
+  document.getElementById('btn-pt').className = 'lang-btn'+(l==='pt'?' active':'');
+  document.getElementById('btn-en').className = 'lang-btn'+(l==='en'?' active':'');
+  var t = textos[l];
+  Object.keys(t).forEach(function(id) {
+    var el = document.getElementById(id);
+    if(el) el.innerHTML = t[id];
+  });
+  document.querySelectorAll('.tab').forEach(function(tab){
+    var key = l==='pt' ? 'data-pt' : 'data-en';
+    if(tab.getAttribute(key)) tab.textContent = tab.getAttribute(key);
+  });
+  document.querySelectorAll('.filtro').forEach(function(f){
+    var key = l==='pt' ? 'data-pt' : 'data-en';
+    if(f.getAttribute(key)) f.textContent = f.getAttribute(key);
+  });
+}
+
+// ── MINUTO AO VIVO ──
+var min = 74;
+setInterval(function() {
+  min = Math.min(90, min+1);
+  var el = document.getElementById('pl-min');
+  if(el) el.textContent = min>=90 ? 'FT' : min+"'";
+}, 8000);
+
+// ── COUNTDOWN ──
+function updateCD() {
+  var now = new Date();
+  var target = new Date();
+  target.setHours(23,0,0,0);
+  var diff = Math.max(0, Math.floor((target-now)/1000));
+  var h = Math.floor(diff/3600);
+  var m = Math.floor((diff%3600)/60);
+  var s = diff%60;
+  var pad = function(n){ return String(n).padStart(2,'0'); };
+  var hEl=document.getElementById('cd-h'), mEl=document.getElementById('cd-m'), sEl=document.getElementById('cd-s');
+  if(hEl) hEl.textContent=pad(h);
+  if(mEl) mEl.textContent=pad(m);
+  if(sEl) sEl.textContent=pad(s);
+}
+updateCD();
+setInterval(updateCD, 1000);
+</script>
+<script>
+if("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/jogotaonde/sw.js")
+    .then(function(){ console.log("SW registado"); })
+    .catch(function(e){ console.log("SW erro:", e); });
+}
+</script>
+</body>
+</html>

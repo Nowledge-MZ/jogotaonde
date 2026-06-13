@@ -1,0 +1,35 @@
+{
+  "name": "Jogo Tá Onde",
+  "short_name": "JogoTáOnde",
+  "description": "Encontra bares em Maputo com transmissão ao vivo da Copa do Mundo 2026",
+  "start_url": "/jogotaonde/",
+  "scope": "/jogotaonde/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F3D20",
+  "theme_color": "#0F3D20",
+  "lang": "pt",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%230F3D20'/%3E%3Ccircle cx='256' cy='256' r='180' fill='none' stroke='rgba(255,255,255,0.1)' stroke-width='8'/%3E%3Cpath d='M256 80 C248 120,224 150,224 256 C224 362,248 392,256 432 C264 392,288 362,288 256 C288 150,264 120,256 80Z' fill='%23D4A420'/%3E%3Ccircle cx='256' cy='256' r='20' fill='%23fff'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "entertainment", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Calendário de jogos",
+      "short_name": "Calendário",
+      "description": "Ver jogos de hoje no horário de Maputo",
+      "url": "/jogotaonde/#calendario"
+    },
+    {
+      "name": "Bares com espaço",
+      "short_name": "Bares",
+      "description": "Encontrar bar para ver o jogo",
+      "url": "/jogotaonde/#bares"
+    }
+  ]
+}
