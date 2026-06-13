@@ -1,1 +1,0 @@
-<!DOCTYPE html> <html><head><title>Jogo Tá Onde</title></head> <body><h1>Jogo Tá Onde — em breve</h1></body> </html>
